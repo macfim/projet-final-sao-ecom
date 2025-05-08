@@ -1,0 +1,22 @@
+meta {
+  name: Query user by ID
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: http://localhost:3000/users/graphql
+  body: graphql
+  auth: none
+}
+
+body:graphql {
+  query {
+    user(id: 1) {
+      id
+      name
+      email
+    }
+  }
+  
+}

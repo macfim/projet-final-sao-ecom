@@ -1,0 +1,21 @@
+{
+  "name": "projet-final-sao-ecom",
+  "version": "1.0.0",
+  "scripts": {
+    "start:product": "cd product-service && npm start",
+    "start:user": "cd user-service && npm start",
+    "start:order": "cd order-service && npm start",
+    "start:notification": "cd notification-service && npm start",
+    "start:gateway": "cd api-gateway && npm start",
+    "start:all": "concurrently \"npm run start:product\" \"npm run start:user\" \"npm run start:order\" \"npm run start:notification\" \"npm run start:gateway\"",
+    "dev:product": "cd product-service && npm run dev",
+    "dev:user": "cd user-service && npm run dev",
+    "dev:order": "cd order-service && npm run dev",
+    "dev:notification": "cd notification-service && npm run dev",
+    "dev:gateway": "cd api-gateway && npm run dev",
+    "dev:all": "concurrently \"npm run dev:product\" \"npm run dev:user\" \"npm run dev:order\" \"npm run dev:notification\" \"npm run dev:gateway\""
+  },
+  "dependencies": {
+    "concurrently": "^7.6.0"
+  }
+}
