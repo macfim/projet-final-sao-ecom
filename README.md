@@ -15,7 +15,7 @@ A minimalist e-commerce platform using Node.js microservices with different comm
 This architecture diagram was generated using:
 
 ```bash
-MSYS_NO_PATHCONV=1 docker run --rm -it --name dcv -v "$(pwd):/input" pmsipilot/docker-compose-viz render -m image docker-compose.yml -o architecture.png --no-volumes -r
+MSYS_NO_PATHCONV=1 docker run --rm -it --name dcv -v "$(pwd):/input" pmsipilot/docker-compose-viz render -m image docker-compose.yml -o architecture.png --no-volumes -r --force
 ```
 
 ## Prerequisites
