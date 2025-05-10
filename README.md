@@ -8,6 +8,16 @@ A minimalist e-commerce platform using Node.js microservices with different comm
 - Notification Service (Kafka)
 - API Gateway (using direct fetch requests)
 
+## Architecture
+
+![Microservices Architecture](architecture.png)
+
+This architecture diagram was generated using:
+
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm -it --name dcv -v "$(pwd):/input" pmsipilot/docker-compose-viz render -m image docker-compose.yml -o architecture.png --no-volumes -r
+```
+
 ## Prerequisites
 
 - Node.js (v14+)
