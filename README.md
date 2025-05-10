@@ -2,11 +2,11 @@
 
 A minimalist e-commerce platform using Node.js microservices with different communication protocols:
 
-- Product Service (REST)
-- User Service (GraphQL)
-- Order Service (gRPC)
-- Notification Service (Kafka)
-- API Gateway (using direct fetch requests)
+- Product Service (gRPC)
+- User Service (gRPC)
+- Order Service (gRPC + Kafka event publishing)
+- Notification Service (Kafka consumer)
+- API Gateway (REST + GraphQL interfaces)
 
 ## Architecture
 
@@ -49,12 +49,12 @@ docker-compose up
 This will build and start all services:
 
 - API Gateway: http://localhost:3000
-- Notification Service: http://localhost:3002
-- Order Service: http://localhost:3003
-- User Service: http://localhost:3004
-- Product Service: http://localhost:3005
-- Kafka: localhost:9092
-- Zookeeper: localhost:2181
+- Notification Service: (internal Kafka consumer)
+- Order Service: (internal gRPC server on port 3003)
+- User Service: (internal gRPC server on port 3004)
+- Product Service: (internal gRPC server on port 3005)
+- Kafka: (internal on port 9092)
+- Zookeeper: (internal on port 2181)
 
 To rebuild the services after making changes:
 
@@ -110,10 +110,35 @@ npm run dev:gateway
 
 This project demonstrates different communication patterns between microservices:
 
-1. **REST API** - Product Service exposes a REST API, consumed by the API Gateway using fetch
-2. **GraphQL** - User Service exposes a GraphQL API, consumed by the API Gateway using fetch
-3. **gRPC** - Order Service exposes a gRPC API, consumed by the API Gateway using gRPC client
+1. **gRPC** - All services (Product, User, Order) implement gRPC servers and are consumed by the API Gateway via gRPC clients
+2. **REST API** - API Gateway exposes REST endpoints that internally call the gRPC services
+3. **GraphQL** - API Gateway also provides a GraphQL interface for accessing the same services
 4. **Event-Driven** - Order Service publishes events to Kafka, consumed by the Notification Service
+
+## API Gateway Access
+
+You can interact with all three main services (Product, User, and Order) through the API Gateway using either:
+
+1. **REST API Endpoints**:
+
+   - Products: `GET/POST /products`, `GET /products/:id`
+   - Users: `GET/POST /users`, `GET /users/:id`
+   - Orders: `GET/POST /orders`, `GET /orders/:id`
+
+2. **GraphQL Interface**:
+   - Access via `/graphql` endpoint on the API Gateway
+   - Query products, users, and orders
+   - Perform mutations for creating products, users, and orders
+
+The API Gateway translates these REST and GraphQL requests into gRPC calls to the appropriate microservice.
+
+## Service Details
+
+- **Product Service**: Manages product catalog (name, price, inventory)
+- **User Service**: Manages user accounts
+- **Order Service**: Handles order creation and triggers notifications via Kafka
+- **Notification Service**: Consumes Kafka events from the Order Service
+- **API Gateway**: Unified entry point that provides both REST and GraphQL interfaces
 
 ## API Testing with Bruno
 
@@ -123,7 +148,7 @@ This project includes API collections for [Bruno](https://www.usebruno.com/), an
 2. Open Bruno and select "Open Collection"
 3. Navigate to the Bruno directory in this project
 4. Use the provided requests to test each service:
-   - Product Service: REST API requests
-   - User Service: GraphQL queries and mutations
-   - Order Service: gRPC requests through the API Gateway
-   - API Gateway: Combined endpoints for all services
+   - Product Service: Access via REST and GraphQL through the API Gateway
+   - User Service: Access via REST and GraphQL through the API Gateway
+   - Order Service: Access via REST and GraphQL through the API Gateway
+   - Examples for all available endpoints and queries
