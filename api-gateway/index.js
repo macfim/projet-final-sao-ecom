@@ -152,6 +152,7 @@ const typeDefs = gql`
     id: ID!
     name: String!
     email: String!
+    createdAt: String!
   }
 
   type Product {
@@ -159,6 +160,7 @@ const typeDefs = gql`
     name: String!
     price: Float!
     quantity: Int!
+    createdAt: String!
   }
 
   type OrderItem {

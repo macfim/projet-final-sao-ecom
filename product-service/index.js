@@ -1,13 +1,20 @@
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 const path = require("path");
+const mongoose = require("mongoose");
 
-// In-memory database
-const products = [
-  { id: "1", name: "Laptop", price: 999.99, quantity: 10 },
-  { id: "2", name: "Smartphone", price: 699.99, quantity: 15 },
-  { id: "3", name: "Headphones", price: 99.99, quantity: 20 },
-];
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI);
+
+// Product Schema
+const productSchema = new mongoose.Schema({
+  name: String,
+  price: Number,
+  quantity: Number,
+  createdAt: { type: Date, default: Date.now },
+});
+
+const Product = mongoose.model("Product", productSchema);
 
 // Load proto file
 const PROTO_PATH = path.resolve(__dirname, "./product.proto");
@@ -22,31 +29,73 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const productProto = grpc.loadPackageDefinition(packageDefinition).product;
 
 // Implement the gRPC service methods
-const getProduct = (call, callback) => {
-  const product = products.find((p) => p.id === call.request.id);
-  if (!product) {
-    return callback({
-      code: grpc.status.NOT_FOUND,
-      message: "Product not found",
+const getProduct = async (call, callback) => {
+  try {
+    const product = await Product.findById(call.request.id);
+    if (!product) {
+      return callback({
+        code: grpc.status.NOT_FOUND,
+        message: "Product not found",
+      });
+    }
+    callback(null, {
+      id: product._id.toString(),
+      name: product.name,
+      price: product.price,
+      quantity: product.quantity,
+      createdAt: product.createdAt.toISOString(),
+    });
+  } catch (error) {
+    callback({
+      code: grpc.status.INTERNAL,
+      message: error.message,
     });
   }
-  callback(null, product);
 };
 
-const getProducts = (call, callback) => {
-  callback(null, { products });
+const getProducts = async (call, callback) => {
+  try {
+    const products = await Product.find();
+    callback(null, {
+      products: products.map((p) => ({
+        id: p._id.toString(),
+        name: p.name,
+        price: p.price,
+        quantity: p.quantity,
+        createdAt: p.createdAt.toISOString(),
+      })),
+    });
+  } catch (error) {
+    callback({
+      code: grpc.status.INTERNAL,
+      message: error.message,
+    });
+  }
 };
 
-const createProduct = (call, callback) => {
-  const { name, price, quantity } = call.request;
-  const newProduct = {
-    id: (products.length + 1).toString(),
-    name,
-    price: parseFloat(price),
-    quantity: parseInt(quantity, 10),
-  };
-  products.push(newProduct);
-  callback(null, newProduct);
+const createProduct = async (call, callback) => {
+  try {
+    const { name, price, quantity } = call.request;
+    const product = new Product({
+      name,
+      price,
+      quantity,
+      createdAt: new Date(),
+    });
+    await product.save();
+    callback(null, {
+      id: product._id.toString(),
+      name: product.name,
+      price: product.price,
+      quantity: product.quantity,
+      createdAt: product.createdAt.toISOString(),
+    });
+  } catch (error) {
+    callback({
+      code: grpc.status.INTERNAL,
+      message: error.message,
+    });
+  }
 };
 
 // Start gRPC server

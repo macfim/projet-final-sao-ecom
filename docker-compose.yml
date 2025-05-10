@@ -9,8 +9,23 @@ networks:
     driver: bridge
   kafka-network:
     driver: bridge
+  mongodb-network:
+    driver: bridge
 
 services:
+  mongodb-database:
+    container_name: mongodb-database
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - mongodb-network
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=rootpassword
+
   zookeeper:
     container_name: zookeeper
     image: wurstmeister/zookeeper
@@ -71,21 +86,37 @@ services:
     build: ./order-service
     environment:
       - KAFKA_BROKER=kafka:9092
+      - MONGODB_URI=mongodb://root:rootpassword@mongodb-database:27017/order?authSource=admin
     depends_on:
       - kafka
+      - mongodb-database
     networks:
       - api-order-network
       - kafka-network
+      - mongodb-network
     restart: on-failure
 
   user-service:
     container_name: user-service
     build: ./user-service
+    environment:
+      - MONGODB_URI=mongodb://root:rootpassword@mongodb-database:27017/user?authSource=admin
+    depends_on:
+      - mongodb-database
     networks:
       - api-user-network
+      - mongodb-network
 
   product-service:
     container_name: product-service
     build: ./product-service
+    environment:
+      - MONGODB_URI=mongodb://root:rootpassword@mongodb-database:27017/product?authSource=admin
+    depends_on:
+      - mongodb-database
     networks:
       - api-product-network
+      - mongodb-network
+
+volumes:
+  mongodb_data:

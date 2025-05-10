@@ -1,110 +1,155 @@
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
+const path = require("path");
+const mongoose = require("mongoose");
 const { Kafka } = require("kafkajs");
 
-const PORT = 3003;
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI);
+
+// Order Schema
+const orderItemSchema = new mongoose.Schema({
+  productId: String,
+  quantity: Number,
+});
+
+const orderSchema = new mongoose.Schema({
+  userId: String,
+  items: [orderItemSchema],
+  status: String,
+  createdAt: { type: Date, default: Date.now },
+});
+
+const Order = mongoose.model("Order", orderSchema);
+
+// Kafka setup
+const kafka = new Kafka({
+  clientId: "order-service",
+  brokers: [process.env.KAFKA_BROKER],
+});
+
+const producer = kafka.producer();
 
 // Load proto file
-const packageDefinition = protoLoader.loadSync("./order.proto", {
+const PROTO_PATH = path.resolve(__dirname, "./order.proto");
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
   enums: String,
   defaults: true,
   oneofs: true,
 });
+
 const orderProto = grpc.loadPackageDefinition(packageDefinition).order;
 
-// In-memory order database
-const orders = [];
-
-// Setup Kafka producer
-const kafka = new Kafka({
-  clientId: "order-service",
-  brokers: [process.env.KAFKA_BROKER || "localhost:9092"],
-});
-const producer = kafka.producer();
-
-// Connect to Kafka
-const connectKafka = async () => {
-  await producer.connect();
-  console.log("Connected to Kafka");
-};
-
-// Publish order created event
-const publishOrderCreated = async (order) => {
+// Implement the gRPC service methods
+const createOrder = async (call, callback) => {
   try {
+    const { userId, items } = call.request;
+    const order = new Order({
+      userId,
+      items,
+      status: "PENDING",
+    });
+    await order.save();
+
+    // Send order created event to Kafka
     await producer.send({
       topic: "order-events",
       messages: [
         {
-          key: order.id,
-          value: JSON.stringify({ type: "ORDER_CREATED", data: order }),
+          value: JSON.stringify({
+            type: "ORDER_CREATED",
+            orderId: order._id.toString(),
+            userId,
+            items,
+          }),
         },
       ],
     });
-    console.log(`Published order created event for order ${order.id}`);
-  } catch (err) {
-    console.error("Erreur lors de la production de message", err);
+
+    callback(null, {
+      id: order._id.toString(),
+      userId: order.userId,
+      items: order.items,
+      status: order.status,
+      createdAt: order.createdAt.toISOString(),
+    });
+  } catch (error) {
+    callback({
+      code: grpc.status.INTERNAL,
+      message: error.message,
+    });
   }
 };
 
-// gRPC service implementation
-const orderService = {
-  createOrder: async (call, callback) => {
-    const { userId, items } = call.request;
-    const order = {
-      id: (orders.length + 1).toString(),
-      userId,
-      items,
-      status: "CREATED",
-      createdAt: new Date().toISOString(),
-    };
-    orders.push(order);
-
-    try {
-      await publishOrderCreated(order);
-    } catch (error) {
-      console.error("Error publishing to Kafka", error);
-    }
-
-    callback(null, order);
-  },
-
-  getOrder: (call, callback) => {
-    const { orderId } = call.request;
-    const order = orders.find((o) => o.id === orderId);
-
+const getOrder = async (call, callback) => {
+  try {
+    const order = await Order.findById(call.request.orderId);
     if (!order) {
       return callback({
         code: grpc.status.NOT_FOUND,
         message: "Order not found",
       });
     }
+    callback(null, {
+      id: order._id.toString(),
+      userId: order.userId,
+      items: order.items,
+      status: order.status,
+      createdAt: order.createdAt.toISOString(),
+    });
+  } catch (error) {
+    callback({
+      code: grpc.status.INTERNAL,
+      message: error.message,
+    });
+  }
+};
 
-    callback(null, order);
-  },
-
-  getOrders: (call, callback) => {
-    callback(null, { orders });
-  },
+const getOrders = async (call, callback) => {
+  try {
+    const orders = await Order.find();
+    callback(null, {
+      orders: orders.map((order) => ({
+        id: order._id.toString(),
+        userId: order.userId,
+        items: order.items,
+        status: order.status,
+        createdAt: order.createdAt.toISOString(),
+      })),
+    });
+  } catch (error) {
+    callback({
+      code: grpc.status.INTERNAL,
+      message: error.message,
+    });
+  }
 };
 
 // Start gRPC server
 const server = new grpc.Server();
-server.addService(orderProto.OrderService.service, orderService);
-server.bindAsync(
-  `0.0.0.0:${PORT}`,
-  grpc.ServerCredentials.createInsecure(),
-  (error, port) => {
-    if (error) {
-      console.error("Failed to bind server:", error);
-      return;
+server.addService(orderProto.OrderService.service, {
+  createOrder,
+  getOrder,
+  getOrders,
+});
+
+// Connect to Kafka before starting the server
+producer.connect().then(() => {
+  server.bindAsync(
+    "0.0.0.0:3003",
+    grpc.ServerCredentials.createInsecure(),
+    (err, port) => {
+      if (err) {
+        console.error("Failed to bind server:", err);
+        return;
+      }
+      console.log(`Order Service running on port ${port}`);
+      server.start();
+      console.log(
+        "Order Service is ready to accept connections from other containers"
+      );
     }
-
-    console.log(`Order Service running on port ${port}`);
-    server.start();
-
-    // Connect to Kafka
-    connectKafka().catch(console.error);
-  }
-);
+  );
+});

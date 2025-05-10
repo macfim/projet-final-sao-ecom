@@ -1,12 +1,19 @@
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 const path = require("path");
+const mongoose = require("mongoose");
 
-// In-memory user database
-const users = [
-  { id: "1", name: "Alice Johnson", email: "alice@example.com" },
-  { id: "2", name: "Bob Smith", email: "bob@example.com" },
-];
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI);
+
+// User Schema
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  createdAt: { type: Date, default: Date.now },
+});
+
+const User = mongoose.model("User", userSchema);
 
 // Load proto file
 const PROTO_PATH = path.resolve(__dirname, "./user.proto");
@@ -21,30 +28,69 @@ const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 const userProto = grpc.loadPackageDefinition(packageDefinition).user;
 
 // Implement the gRPC service methods
-const getUser = (call, callback) => {
-  const user = users.find((user) => user.id === call.request.id);
-  if (!user) {
-    return callback({
-      code: grpc.status.NOT_FOUND,
-      message: "User not found",
+const getUser = async (call, callback) => {
+  try {
+    const user = await User.findById(call.request.id);
+    if (!user) {
+      return callback({
+        code: grpc.status.NOT_FOUND,
+        message: "User not found",
+      });
+    }
+    callback(null, {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt.toISOString(),
+    });
+  } catch (error) {
+    callback({
+      code: grpc.status.INTERNAL,
+      message: error.message,
     });
   }
-  callback(null, user);
 };
 
-const getUsers = (call, callback) => {
-  callback(null, { users });
+const getUsers = async (call, callback) => {
+  try {
+    const users = await User.find();
+    callback(null, {
+      users: users.map((u) => ({
+        id: u._id.toString(),
+        name: u.name,
+        email: u.email,
+        createdAt: u.createdAt.toISOString(),
+      })),
+    });
+  } catch (error) {
+    callback({
+      code: grpc.status.INTERNAL,
+      message: error.message,
+    });
+  }
 };
 
-const createUser = (call, callback) => {
-  const { name, email } = call.request;
-  const newUser = {
-    id: (users.length + 1).toString(),
-    name,
-    email,
-  };
-  users.push(newUser);
-  callback(null, newUser);
+const createUser = async (call, callback) => {
+  try {
+    const { name, email } = call.request;
+    const user = new User({
+      name,
+      email,
+      createdAt: new Date(),
+    });
+    await user.save();
+    callback(null, {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt.toISOString(),
+    });
+  } catch (error) {
+    callback({
+      code: grpc.status.INTERNAL,
+      message: error.message,
+    });
+  }
 };
 
 // Start gRPC server
