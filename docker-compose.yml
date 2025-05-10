@@ -7,8 +7,6 @@ networks:
 services:
   zookeeper:
     image: wurstmeister/zookeeper
-    ports:
-      - "2181:2181"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     networks:
@@ -16,8 +14,6 @@ services:
 
   kafka:
     image: wurstmeister/kafka
-    ports:
-      - "9092:9092"
     environment:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
@@ -47,8 +43,6 @@ services:
 
   notification-service:
     build: ./notification-service
-    ports:
-      - "3002:3002"
     environment:
       - KAFKA_BROKER=kafka:9092
     depends_on:
@@ -59,8 +53,6 @@ services:
 
   order-service:
     build: ./order-service
-    ports:
-      - "3003:3003"
     environment:
       - KAFKA_BROKER=kafka:9092
     depends_on:
@@ -71,14 +63,10 @@ services:
 
   user-service:
     build: ./user-service
-    ports:
-      - "3004:3004"
     networks:
       - microservices-network
 
   product-service:
     build: ./product-service
-    ports:
-      - "3005:3005"
     networks:
       - microservices-network
