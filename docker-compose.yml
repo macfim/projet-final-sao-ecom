@@ -32,6 +32,8 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=rootpassword
+    ports:
+      - "27017:27017" # Using this to test local build
 
   zookeeper:
     container_name: zookeeper
@@ -53,6 +55,8 @@ services:
       - zookeeper
     networks:
       - kafka-network
+    ports:
+      - "9092:9092" # Using this to test local build
 
   api-gateway:
     container_name: api-gateway
@@ -63,6 +67,9 @@ services:
       - ORDER_SERVICE_URL=order-service:3003
       - PRODUCT_SERVICE_URL=product-service:3005
       - USER_SERVICE_URL=user-service:3004
+      - USER_PROTO_PATH=/app/user.proto
+      - PRODUCT_PROTO_PATH=/app/product.proto
+      - ORDER_PROTO_PATH=/app/order.proto
     depends_on:
       - user-service
       - product-service

@@ -5,7 +5,10 @@ const mongoose = require("mongoose");
 const { Kafka } = require("kafkajs");
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI);
+mongoose.connect(
+  process.env.MONGODB_URI ||
+    "mongodb://root:rootpassword@localhost:27017/order?authSource=admin"
+);
 
 // Order Schema
 const orderItemSchema = new mongoose.Schema({
@@ -22,10 +25,12 @@ const orderSchema = new mongoose.Schema({
 
 const Order = mongoose.model("Order", orderSchema);
 
+const KAFKA_BROKER = process.env.KAFKA_BROKER || "localhost:9092";
+
 // Kafka setup
 const kafka = new Kafka({
   clientId: "order-service",
-  brokers: [process.env.KAFKA_BROKER],
+  brokers: [KAFKA_BROKER],
 });
 
 const producer = kafka.producer();

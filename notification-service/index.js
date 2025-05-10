@@ -1,9 +1,11 @@
 const { Kafka } = require("kafkajs");
 
+const KAFKA_BROKER = process.env.KAFKA_BROKER || "localhost:9092";
+
 // Setup Kafka consumer
 const kafka = new Kafka({
   clientId: "notification-service",
-  brokers: [process.env.KAFKA_BROKER || "localhost:9092"],
+  brokers: [KAFKA_BROKER],
 });
 
 const consumer = kafka.consumer({ groupId: "notification-group" });

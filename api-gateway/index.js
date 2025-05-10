@@ -29,9 +29,15 @@ const setupGrpcClient = (protoPath, packageName, serviceName, serviceUrl) => {
 };
 
 // Load proto files
-const USER_PROTO = path.resolve(__dirname, "./user.proto");
-const PRODUCT_PROTO = path.resolve(__dirname, "./product.proto");
-const ORDER_PROTO = path.resolve(__dirname, "./order.proto");
+const USER_PROTO =
+  process.env.USER_PROTO_PATH ||
+  path.resolve(__dirname, "../user-service/user.proto");
+const PRODUCT_PROTO =
+  process.env.PRODUCT_PROTO_PATH ||
+  path.resolve(__dirname, "../product-service/product.proto");
+const ORDER_PROTO =
+  process.env.ORDER_PROTO_PATH ||
+  path.resolve(__dirname, "../order-service/order.proto");
 
 // Create gRPC clients
 const userClient = setupGrpcClient(

@@ -4,7 +4,10 @@ const path = require("path");
 const mongoose = require("mongoose");
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI);
+mongoose.connect(
+  process.env.MONGODB_URI ||
+    "mongodb://root:rootpassword@localhost:27017/user?authSource=admin"
+);
 
 // User Schema
 const userSchema = new mongoose.Schema({
