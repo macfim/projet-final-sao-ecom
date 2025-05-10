@@ -1,4 +1,6 @@
-const { ApolloServer, gql } = require("apollo-server");
+const grpc = require("@grpc/grpc-js");
+const protoLoader = require("@grpc/proto-loader");
+const path = require("path");
 
 // In-memory user database
 const users = [
@@ -6,50 +8,65 @@ const users = [
   { id: "2", name: "Bob Smith", email: "bob@example.com" },
 ];
 
-// GraphQL schema
-const typeDefs = gql`
-  type User {
-    id: ID!
-    name: String!
-    email: String!
-  }
+// Load proto file
+const PROTO_PATH = path.resolve(__dirname, "./user.proto");
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true,
+});
 
-  type Query {
-    user(id: ID!): User
-    users: [User]
-  }
+const userProto = grpc.loadPackageDefinition(packageDefinition).user;
 
-  type Mutation {
-    createUser(name: String!, email: String!): User
+// Implement the gRPC service methods
+const getUser = (call, callback) => {
+  const user = users.find((user) => user.id === call.request.id);
+  if (!user) {
+    return callback({
+      code: grpc.status.NOT_FOUND,
+      message: "User not found",
+    });
   }
-`;
-
-// Resolvers
-const resolvers = {
-  Query: {
-    user: (_, { id }) => users.find((user) => user.id === id),
-    users: () => users,
-  },
-  Mutation: {
-    createUser: (_, { name, email }) => {
-      const newUser = {
-        id: (users.length + 1).toString(),
-        name,
-        email,
-      };
-      users.push(newUser);
-      return newUser;
-    },
-  },
+  callback(null, user);
 };
 
-// Create Apollo Server
-const server = new ApolloServer({ typeDefs, resolvers });
+const getUsers = (call, callback) => {
+  callback(null, { users });
+};
 
-// Start server
-server.listen({ port: 3004, host: "0.0.0.0" }).then(({ url }) => {
-  console.log(`User Service running at ${url}`);
-  console.log(
-    "User Service is ready to accept connections from other containers"
-  );
+const createUser = (call, callback) => {
+  const { name, email } = call.request;
+  const newUser = {
+    id: (users.length + 1).toString(),
+    name,
+    email,
+  };
+  users.push(newUser);
+  callback(null, newUser);
+};
+
+// Start gRPC server
+const server = new grpc.Server();
+server.addService(userProto.UserService.service, {
+  getUser,
+  getUsers,
+  createUser,
 });
+
+server.bindAsync(
+  "0.0.0.0:3004",
+  grpc.ServerCredentials.createInsecure(),
+  (err, port) => {
+    if (err) {
+      console.error("Failed to bind server:", err);
+      return;
+    }
+    console.log(`User Service running on port ${port}`);
+    server.start();
+    console.log(
+      "User Service is ready to accept connections from other containers"
+    );
+  }
+);

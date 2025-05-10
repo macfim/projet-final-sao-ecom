@@ -1,13 +1,6 @@
-const express = require("express");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-
-const app = express();
-const PORT = 3005;
-
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
+const grpc = require("@grpc/grpc-js");
+const protoLoader = require("@grpc/proto-loader");
+const path = require("path");
 
 // In-memory database
 const products = [
@@ -16,23 +9,36 @@ const products = [
   { id: "3", name: "Headphones", price: 99.99, quantity: 20 },
 ];
 
-// Get all products
-app.get("/products", (req, res) => {
-  res.json(products);
+// Load proto file
+const PROTO_PATH = path.resolve(__dirname, "./product.proto");
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+  keepCase: true,
+  longs: String,
+  enums: String,
+  defaults: true,
+  oneofs: true,
 });
 
-// Get product by id
-app.get("/products/:id", (req, res) => {
-  const product = products.find((p) => p.id === req.params.id);
+const productProto = grpc.loadPackageDefinition(packageDefinition).product;
+
+// Implement the gRPC service methods
+const getProduct = (call, callback) => {
+  const product = products.find((p) => p.id === call.request.id);
   if (!product) {
-    return res.status(404).json({ error: "Product not found" });
+    return callback({
+      code: grpc.status.NOT_FOUND,
+      message: "Product not found",
+    });
   }
-  res.json(product);
-});
+  callback(null, product);
+};
 
-// Create a new product
-app.post("/products", (req, res) => {
-  const { name, price, quantity } = req.body;
+const getProducts = (call, callback) => {
+  callback(null, { products });
+};
+
+const createProduct = (call, callback) => {
+  const { name, price, quantity } = call.request;
   const newProduct = {
     id: (products.length + 1).toString(),
     name,
@@ -40,13 +46,29 @@ app.post("/products", (req, res) => {
     quantity: parseInt(quantity, 10),
   };
   products.push(newProduct);
-  res.status(201).json(newProduct);
+  callback(null, newProduct);
+};
+
+// Start gRPC server
+const server = new grpc.Server();
+server.addService(productProto.ProductService.service, {
+  getProduct,
+  getProducts,
+  createProduct,
 });
 
-// Start server
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Product Service running on http://0.0.0.0:${PORT}`);
-  console.log(
-    "Product Service is ready to accept connections from other containers"
-  );
-});
+server.bindAsync(
+  "0.0.0.0:3005",
+  grpc.ServerCredentials.createInsecure(),
+  (err, port) => {
+    if (err) {
+      console.error("Failed to bind server:", err);
+      return;
+    }
+    console.log(`Product Service running on port ${port}`);
+    server.start();
+    console.log(
+      "Product Service is ready to accept connections from other containers"
+    );
+  }
+);

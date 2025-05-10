@@ -34,8 +34,6 @@ services:
     build: ./api-gateway
     ports:
       - "3000:3000"
-    volumes:
-      - ./order-service/order.proto:/app/order.proto
     environment:
       - ORDER_SERVICE_URL=order-service:3003
       - PRODUCT_SERVICE_URL=product-service:3005

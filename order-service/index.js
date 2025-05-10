@@ -83,6 +83,10 @@ const orderService = {
 
     callback(null, order);
   },
+
+  getOrders: (call, callback) => {
+    callback(null, { orders });
+  },
 };
 
 // Start gRPC server
