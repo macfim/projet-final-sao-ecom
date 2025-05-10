@@ -65,9 +65,11 @@ const createOrder = async (call, callback) => {
         {
           value: JSON.stringify({
             type: "ORDER_CREATED",
-            orderId: order._id.toString(),
-            userId,
-            items,
+            data: {
+              orderId: order._id.toString(),
+              userId,
+              items,
+            },
           }),
         },
       ],

@@ -12,7 +12,7 @@ const consumer = kafka.consumer({ groupId: "notification-group" });
 
 // Handle order created event
 const handleOrderCreated = (orderData) => {
-  console.log(`Notification: New order created with ID: ${orderData.id}`);
+  console.log(`Notification: New order created with ID: ${orderData.orderId}`);
   console.log(`Sending email notification to user ${orderData.userId}`);
   // In a real system, this would send an actual email
 };
