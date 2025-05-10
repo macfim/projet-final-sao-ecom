@@ -1,0 +1,26 @@
+meta {
+  name: Query all orders
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/graphql
+  body: graphql
+  auth: none
+}
+
+body:graphql {
+  query {
+    orders {
+      id
+      userId
+      items {
+        productId
+        quantity
+      }
+      status
+      createdAt
+    }
+  }
+}

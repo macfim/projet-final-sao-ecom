@@ -1,0 +1,23 @@
+meta {
+  name: Query product by id
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: http://localhost:3000/graphql
+  body: graphql
+  auth: none
+}
+
+body:graphql {
+  query {
+    product(id: 1) {
+      id
+      name
+      price
+      quantity
+    }
+  }
+  
+}

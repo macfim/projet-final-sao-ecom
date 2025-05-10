@@ -1,0 +1,27 @@
+meta {
+  name: Create new order
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/graphql
+  body: graphql
+  auth: none
+}
+
+body:graphql {
+  mutation {
+    createOrder(userId: 1, items: [{ productId: 1, quantity: 1 }]) {
+      id
+      userId
+      items {
+        productId
+        quantity
+      }
+      status
+      createdAt
+    }
+  }
+  
+}

@@ -1,18 +1,18 @@
 meta {
-  name: Query user by ID
+  name: Query all users
   type: graphql
-  seq: 2
+  seq: 1
 }
 
 post {
-  url: http://localhost:3000/users/graphql
+  url: http://localhost:3000/graphql
   body: graphql
   auth: none
 }
 
 body:graphql {
   query {
-    user(id: 1) {
+    users {
       id
       name
       email

@@ -1,21 +1,22 @@
 meta {
-  name: Query all users
+  name: Query all products
   type: graphql
   seq: 1
 }
 
 post {
-  url: http://localhost:3000/users/graphql
+  url: http://localhost:3000/graphql
   body: graphql
   auth: none
 }
 
 body:graphql {
   query {
-    users {
+    products {
       id
       name
-      email
+      price
+      quantity
     }
   }
   

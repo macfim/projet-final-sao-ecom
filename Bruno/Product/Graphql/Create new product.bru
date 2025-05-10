@@ -1,0 +1,23 @@
+meta {
+  name: Create new product
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/graphql
+  body: graphql
+  auth: none
+}
+
+body:graphql {
+  mutation {
+    createProduct(name: "Sumsung s23", price:888, quantity: 20) {
+      id
+      name
+      price
+      quantity
+    }
+  }
+  
+}
