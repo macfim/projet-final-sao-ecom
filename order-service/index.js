@@ -20,7 +20,7 @@ const orders = [];
 // Setup Kafka producer
 const kafka = new Kafka({
   clientId: "order-service",
-  brokers: ["localhost:9092"],
+  brokers: [process.env.KAFKA_BROKER || "localhost:9092"],
 });
 const producer = kafka.producer();
 

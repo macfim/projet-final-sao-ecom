@@ -3,7 +3,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 
 const app = express();
-const PORT = 3001;
+const PORT = 3005;
 
 // Middleware
 app.use(cors());
@@ -44,6 +44,9 @@ app.post("/products", (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Product Service running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Product Service running on http://0.0.0.0:${PORT}`);
+  console.log(
+    "Product Service is ready to accept connections from other containers"
+  );
 });

@@ -12,7 +12,7 @@ A minimalist e-commerce platform using Node.js microservices with different comm
 
 - Node.js (v14+)
 - npm or yarn
-- Docker and Docker Compose (for Kafka)
+- Docker and Docker Compose
 
 ## Setup Instructions
 
@@ -28,13 +28,37 @@ A minimalist e-commerce platform using Node.js microservices with different comm
    cd api-gateway && npm install
    ```
 
-3. Start Kafka using Docker Compose:
+## Running with Docker
 
-   ```bash
-   docker-compose up -d
-   ```
+The easiest way to run all services is using Docker Compose:
 
-## Running the Services
+```bash
+docker-compose up
+```
+
+This will build and start all services:
+
+- API Gateway: http://localhost:3000
+- Notification Service: http://localhost:3002
+- Order Service: http://localhost:3003
+- User Service: http://localhost:3004
+- Product Service: http://localhost:3005
+- Kafka: localhost:9092
+- Zookeeper: localhost:2181
+
+To rebuild the services after making changes:
+
+```bash
+docker-compose up --build
+```
+
+To stop all services:
+
+```bash
+docker-compose down
+```
+
+## Running Services Locally
 
 ### Production Mode
 
@@ -80,75 +104,6 @@ This project demonstrates different communication patterns between microservices
 2. **GraphQL** - User Service exposes a GraphQL API, consumed by the API Gateway using fetch
 3. **gRPC** - Order Service exposes a gRPC API, consumed by the API Gateway using gRPC client
 4. **Event-Driven** - Order Service publishes events to Kafka, consumed by the Notification Service
-
-## API Endpoints
-
-### Product Service (REST) - http://localhost:3001
-
-- `GET /products` - List all products
-- `GET /products/:id` - Get product by ID
-- `POST /products` - Create new product
-
-### User Service (GraphQL) - http://localhost:3002/graphql
-
-```graphql
-# Get user by ID
-query {
-  user(id: "1") {
-    id
-    name
-    email
-  }
-}
-
-# List all users
-query {
-  users {
-    id
-    name
-    email
-  }
-}
-
-# Create user
-mutation {
-  createUser(name: "John Doe", email: "john@example.com") {
-    id
-    name
-    email
-  }
-}
-```
-
-### Order Service (gRPC) - localhost:3003
-
-- Called through API Gateway or directly using a gRPC client
-
-### API Gateway - http://localhost:3000
-
-- `/products/*` - Routes to Product Service
-- `/graphql` - Routes to User Service
-- `/orders/*` - Routes to Order Service
-
-## Example Requests
-
-### Create a product
-
-```bash
-curl -X POST http://localhost:3000/products -H "Content-Type: application/json" -d '{"name": "Tablet", "price": 299.99, "quantity": 50}'
-```
-
-### Create a user
-
-```bash
-curl -X POST http://localhost:3000/graphql -H "Content-Type: application/json" -d '{"query": "mutation { createUser(name: \"Jane Smith\", email: \"jane@example.com\") { id name email } }"}'
-```
-
-### Create an order
-
-```bash
-curl -X POST http://localhost:3000/orders -H "Content-Type: application/json" -d '{"userId": "1", "items": [{"productId": "1", "quantity": 2}]}'
-```
 
 ## API Testing with Bruno
 

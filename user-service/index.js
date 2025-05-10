@@ -47,6 +47,9 @@ const resolvers = {
 const server = new ApolloServer({ typeDefs, resolvers });
 
 // Start server
-server.listen({ port: 3002 }).then(({ url }) => {
+server.listen({ port: 3004, host: "0.0.0.0" }).then(({ url }) => {
   console.log(`User Service running at ${url}`);
+  console.log(
+    "User Service is ready to accept connections from other containers"
+  );
 });
