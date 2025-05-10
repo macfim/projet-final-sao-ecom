@@ -46,6 +46,10 @@ services:
       - api-product-network
       - api-user-network
       - api-order-network
+    volumes:
+      - ./product-service/product.proto:/app/product.proto
+      - ./order-service/order.proto:/app/order.proto
+      - ./user-service/user.proto:/app/user.proto
 
   notification-service:
     build: ./notification-service
