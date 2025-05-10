@@ -16,6 +16,9 @@ networks:
   mongodb-order-network:
     driver: bridge
 
+  volumes:
+    mongodb_data:
+
 services:
   mongodb-database:
     container_name: mongodb-database
@@ -123,6 +126,3 @@ services:
     networks:
       - api-product-network
       - mongodb-product-network
-
-volumes:
-  mongodb_data:
