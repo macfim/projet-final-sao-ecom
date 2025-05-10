@@ -9,7 +9,11 @@ networks:
     driver: bridge
   kafka-network:
     driver: bridge
-  mongodb-network:
+  mongodb-user-network:
+    driver: bridge
+  mongodb-product-network:
+    driver: bridge
+  mongodb-order-network:
     driver: bridge
 
 services:
@@ -21,7 +25,9 @@ services:
     volumes:
       - mongodb_data:/data/db
     networks:
-      - mongodb-network
+      - mongodb-user-network
+      - mongodb-product-network
+      - mongodb-order-network
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=rootpassword
@@ -93,7 +99,7 @@ services:
     networks:
       - api-order-network
       - kafka-network
-      - mongodb-network
+      - mongodb-order-network
     restart: on-failure
 
   user-service:
@@ -105,7 +111,7 @@ services:
       - mongodb-database
     networks:
       - api-user-network
-      - mongodb-network
+      - mongodb-user-network
 
   product-service:
     container_name: product-service
@@ -116,7 +122,7 @@ services:
       - mongodb-database
     networks:
       - api-product-network
-      - mongodb-network
+      - mongodb-product-network
 
 volumes:
   mongodb_data:
