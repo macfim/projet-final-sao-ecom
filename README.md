@@ -7,6 +7,7 @@ A minimalist e-commerce platform using Node.js microservices with different comm
 - Order Service (gRPC + Kafka event publishing)
 - Notification Service (Kafka consumer)
 - API Gateway (REST + GraphQL interfaces)
+- MongoDB Database (shared database with separate collections)
 
 ## Architecture
 
@@ -32,28 +33,39 @@ A minimalist e-commerce platform using Node.js microservices with different comm
    cd api-gateway && npm install
    ```
 
+3. Set up environment variables:
+
+   For notification service, create a `.env` file in the project root with:
+
+   ```
+   EMAIL_USER=your-email@example.com
+   EMAIL_PASS=your-email-password
+   RECEIVER_EMAIL=recipient@example.com
+   ```
+
 ## Running with Docker
 
 The easiest way to run all services is using Docker Compose:
 
 ```bash
-docker-compose up
+docker-compose --env-file ./notification-service/.env up
 ```
 
 This will build and start all services:
 
 - API Gateway: http://localhost:3000
 - Notification Service: (internal Kafka consumer)
-- Order Service: (internal gRPC server on port 3003)
-- User Service: (internal gRPC server on port 3004)
-- Product Service: (internal gRPC server on port 3005)
-- Kafka: (internal on port 9092)
-- Zookeeper: (internal on port 2181)
+- Order Service: (internal gRPC server)
+- User Service: (internal gRPC server)
+- Product Service: (internal gRPC server)
+- Kafka: (internal on port 9092, exposed for local testing)
+- Zookeeper: (internal)
+- MongoDB: (internal on port 27017, exposed for local testing)
 
 To rebuild the services after making changes:
 
 ```bash
-docker-compose up --build
+docker-compose --env-file ./notification-service/.env up --build
 ```
 
 To stop all services:
@@ -128,11 +140,24 @@ The API Gateway translates these REST and GraphQL requests into gRPC calls to th
 
 ## Service Details
 
-- **Product Service**: Manages product catalog (name, price, inventory)
-- **User Service**: Manages user accounts
-- **Order Service**: Handles order creation and triggers notifications via Kafka
-- **Notification Service**: Consumes Kafka events from the Order Service
+- **Product Service**: Manages product catalog (name, price, inventory) using MongoDB
+- **User Service**: Manages user accounts using MongoDB
+- **Order Service**: Handles order creation, stores in MongoDB, and triggers notifications via Kafka
+- **Notification Service**: Consumes Kafka events from the Order Service and sends email notifications
 - **API Gateway**: Unified entry point that provides both REST and GraphQL interfaces
+- **MongoDB Database**: Shared database with separate collections for products, users, and orders
+
+## Network Configuration
+
+The project uses Docker networks to isolate and secure communication between services:
+
+- api-product-network: Connects API Gateway with Product Service
+- api-user-network: Connects API Gateway with User Service
+- api-order-network: Connects API Gateway with Order Service
+- kafka-network: Connects Order Service with Kafka and Notification Service
+- mongodb-user-network: Connects User Service with MongoDB
+- mongodb-product-network: Connects Product Service with MongoDB
+- mongodb-order-network: Connects Order Service with MongoDB
 
 ## API Testing with Bruno
 
