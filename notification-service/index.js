@@ -1,6 +1,19 @@
 const { Kafka } = require("kafkajs");
+const nodemailer = require("nodemailer");
 
 const KAFKA_BROKER = process.env.KAFKA_BROKER || "localhost:9092";
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+const RECEIVER_EMAIL = process.env.RECEIVER_EMAIL;
+
+// Setup email transporter
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: EMAIL_USER,
+    pass: EMAIL_PASS,
+  },
+});
 
 // Setup Kafka consumer
 const kafka = new Kafka({
@@ -11,10 +24,25 @@ const kafka = new Kafka({
 const consumer = kafka.consumer({ groupId: "notification-group" });
 
 // Handle order created event
-const handleOrderCreated = (orderData) => {
+const handleOrderCreated = async (orderData) => {
   console.log(`Notification: New order created with ID: ${orderData.orderId}`);
-  console.log(`Sending email notification to user ${orderData.userId}`);
-  // In a real system, this would send an actual email
+
+  try {
+    await transporter.sendMail({
+      from: EMAIL_USER,
+      to: RECEIVER_EMAIL,
+      subject: "Order Confirmation",
+      text: `
+      New order #${orderData.orderId} has been created.
+
+      Order details:
+      User ID: ${orderData.userId}
+      `,
+    });
+    console.log(`Email notification sent to ${RECEIVER_EMAIL}`);
+  } catch (error) {
+    console.error("Failed to send email:", error);
+  }
 };
 
 const run = async () => {

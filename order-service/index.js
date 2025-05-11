@@ -51,6 +51,7 @@ const orderProto = grpc.loadPackageDefinition(packageDefinition).order;
 const createOrder = async (call, callback) => {
   try {
     const { userId, items } = call.request;
+
     const order = new Order({
       userId,
       items,

@@ -89,6 +89,9 @@ services:
     build: ./notification-service
     environment:
       - KAFKA_BROKER=kafka:9092
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - RECEIVER_EMAIL=${RECEIVER_EMAIL}
     depends_on:
       - kafka
     networks:
