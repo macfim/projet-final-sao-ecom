@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: {{ include "ecommerce.namespace" . }}
+  labels:
+    {{- include "ecommerce.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.services.notification.replicas }}
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+      - name: notification-service
+        image: {{ .Values.services.notification.image }}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KAFKA_BROKER
+          value: "kafka:9092"
+        - name: EMAIL_USER
+          valueFrom:
+            secretKeyRef:
+              name: notification-secrets
+              key: email-user
+              optional: true
+        - name: EMAIL_PASS
+          valueFrom:
+            secretKeyRef:
+              name: notification-secrets
+              key: email-pass
+              optional: true
+        - name: RECEIVER_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: notification-secrets
+              key: receiver-email
+              optional: true
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: notification-secrets
+  namespace: {{ include "ecommerce.namespace" . }}
+type: Opaque
+stringData:
+  email-user: ""
+  email-pass: ""
+  receiver-email: ""

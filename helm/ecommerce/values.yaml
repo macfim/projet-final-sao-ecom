@@ -1,0 +1,35 @@
+namespace: ecommerce
+
+mongodb:
+  enabled: true
+  storage: 1Gi
+  username: root
+  password: rootpassword
+
+kafka:
+  enabled: true
+  zookeeper:
+    enabled: true
+
+services:
+  user:
+    replicas: 1
+    image: user-service:latest
+  product:
+    replicas: 1
+    image: product-service:latest
+  order:
+    replicas: 1
+    image: order-service:latest
+  notification:
+    replicas: 1
+    image: notification-service:latest
+  apiGateway:
+    replicas: 1
+    image: api-gateway:latest
+    serviceType: LoadBalancer
+
+config:
+  orderServiceUrl: "order-service:3003"
+  productServiceUrl: "product-service:3005"
+  userServiceUrl: "user-service:3004"
