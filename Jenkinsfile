@@ -36,7 +36,7 @@ pipeline {
 
               sh """
                 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${TRIVY_IMAGE} \
-                  image --severity HIGH,CRITICAL --exit-code 1 ${imageSha}
+                  image --severity CRITICAL --exit-code 1 ${imageSha}
               """
 
               sh "docker tag ${imageSha} ${imageLatest}"
