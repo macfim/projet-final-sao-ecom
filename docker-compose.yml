@@ -1,5 +1,3 @@
-version: "3"
-
 networks:
   api-product-network:
     driver: bridge
