@@ -176,6 +176,38 @@ The project uses Docker networks to isolate and secure communication between ser
 - mongodb-product-network: Connects Product Service with MongoDB
 - mongodb-order-network: Connects Order Service with MongoDB
 
+## Kubernetes Deployment
+
+This project includes Kubernetes manifests and Helm charts for deploying to Kubernetes (Docker Desktop).
+
+### Quick Start
+
+1. **Enable Kubernetes in Docker Desktop** (Settings → Kubernetes → Enable)
+
+2. **Build and deploy:**
+   ```bash
+   See KUBERNETES.md for deployment instructions
+   ```
+
+3. **Access the application:**
+   ```bash
+   kubectl port-forward -n ecommerce svc/api-gateway 3000:3000
+   ```
+
+### Detailed Guide
+
+See [KUBERNETES.md](KUBERNETES.md) for complete deployment instructions including:
+- Direct kubectl deployment
+- Helm chart deployment
+- ArgoCD GitOps setup
+- Troubleshooting
+
+### Deployment Options
+
+- **kubectl**: Direct manifest deployment (`k8s/` directory)
+- **Helm**: Template-based deployment (`helm/ecommerce/` chart)
+- **ArgoCD**: GitOps deployment (`argocd/application.yaml`)
+
 ## API Testing with Bruno
 
 This project includes API collections for [Bruno](https://www.usebruno.com/), an open-source API client that can be used to test all the services:
