@@ -35,43 +35,60 @@ A minimalist e-commerce platform using Node.js microservices with different comm
 
 3. Set up environment variables:
 
-   For notification service, create a `.env` file in the project root with:
+   Copy the `.env.example` file to `.env` and update the values:
 
+   ```bash
+   cp .env.example .env
    ```
-   EMAIL_USER=your-email@example.com
-   EMAIL_PASS=your-email-password
-   RECEIVER_EMAIL=recipient@example.com
-   ```
+
+   Then edit `.env` and configure:
+   - MongoDB credentials (if different from defaults)
+   - Email configuration for the notification service (EMAIL_USER, EMAIL_PASS, RECEIVER_EMAIL)
+   - Any other service-specific configurations
 
 ## Running with Docker
 
 The easiest way to run all services is using Docker Compose:
 
 ```bash
-docker-compose --env-file ./notification-service/.env up
+docker-compose --env-file .env up
 ```
 
-This will build and start all services:
+Or if you prefer to use the default values from `.env.example`:
 
-- API Gateway: http://localhost:3000
-- Notification Service: (internal Kafka consumer)
-- Order Service: (internal gRPC server)
-- User Service: (internal gRPC server)
-- Product Service: (internal gRPC server)
-- Kafka: (internal on port 9092, exposed for local testing)
-- Zookeeper: (internal)
-- MongoDB: (internal on port 27017, exposed for local testing)
+```bash
+docker-compose up
+```
+
+This will build and start all services with healthchecks:
+
+- **API Gateway**: http://localhost:3000 (healthcheck: `/health`)
+- **Notification Service**: (internal Kafka consumer)
+- **Order Service**: (internal gRPC server on port 3003)
+- **User Service**: (internal gRPC server on port 3004)
+- **Product Service**: (internal gRPC server on port 3005)
+- **Kafka**: (internal on port 9092)
+- **Zookeeper**: (internal on port 2181)
+- **MongoDB**: (internal on port 27017)
+
+All services include healthchecks and will wait for dependencies to be healthy before starting.
 
 To rebuild the services after making changes:
 
 ```bash
-docker-compose --env-file ./notification-service/.env up --build
+docker-compose --env-file .env up --build
 ```
 
 To stop all services:
 
 ```bash
 docker-compose down
+```
+
+To view service health status:
+
+```bash
+docker-compose ps
 ```
 
 ## Running Services Locally

@@ -28,46 +28,68 @@ services:
       - mongodb-product-network
       - mongodb-order-network
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=rootpassword
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-root}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:-rootpassword}
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   zookeeper:
     container_name: zookeeper
     image: wurstmeister/zookeeper
     environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      - ALLOW_ANONYMOUS_LOGIN=${ALLOW_ANONYMOUS_LOGIN:-yes}
     networks:
       - kafka-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   kafka:
     container_name: kafka
     image: wurstmeister/kafka
     environment:
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "order-events:1:1"
+      KAFKA_ADVERTISED_LISTENERS: ${KAFKA_ADVERTISED_LISTENERS:-PLAINTEXT://kafka:9092}
+      KAFKA_LISTENERS: ${KAFKA_LISTENERS:-PLAINTEXT://0.0.0.0:9092}
+      KAFKA_ZOOKEEPER_CONNECT: ${KAFKA_ZOOKEEPER_CONNECT:-zookeeper:2181}
+      KAFKA_CREATE_TOPICS: ${KAFKA_CREATE_TOPICS:-order-events:1:1}
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     networks:
       - kafka-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   api-gateway:
     container_name: api-gateway
     build: ./api-gateway
     ports:
-      - "3000:3000"
+      - "${API_GATEWAY_PORT:-3000}:3000"
     environment:
-      - ORDER_SERVICE_URL=order-service:3003
-      - PRODUCT_SERVICE_URL=product-service:3005
-      - USER_SERVICE_URL=user-service:3004
-      - USER_PROTO_PATH=/app/user.proto
-      - PRODUCT_PROTO_PATH=/app/product.proto
-      - ORDER_PROTO_PATH=/app/order.proto
+      - ORDER_SERVICE_URL=${ORDER_SERVICE_URL:-order-service:3003}
+      - PRODUCT_SERVICE_URL=${PRODUCT_SERVICE_URL:-product-service:3005}
+      - USER_SERVICE_URL=${USER_SERVICE_URL:-user-service:3004}
+      - USER_PROTO_PATH=${USER_PROTO_PATH:-/app/user.proto}
+      - PRODUCT_PROTO_PATH=${PRODUCT_PROTO_PATH:-/app/product.proto}
+      - ORDER_PROTO_PATH=${ORDER_PROTO_PATH:-/app/order.proto}
     depends_on:
-      - user-service
-      - product-service
-      - order-service
+      user-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
     networks:
       - api-product-network
       - api-user-network
@@ -77,54 +99,97 @@ services:
       - ./order-service/order.proto:/app/order.proto
       - ./user-service/user.proto:/app/user.proto
     restart: on-failure
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   notification-service:
     container_name: notification-service
     build: ./notification-service
     environment:
-      - KAFKA_BROKER=kafka:9092
+      - KAFKA_BROKER=${KAFKA_BROKER:-kafka:9092}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASS=${EMAIL_PASS}
       - RECEIVER_EMAIL=${RECEIVER_EMAIL}
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     networks:
       - kafka-network
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "node.*index.js"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   order-service:
     container_name: order-service
     build: ./order-service
     environment:
-      - KAFKA_BROKER=kafka:9092
-      - MONGODB_URI=mongodb://root:rootpassword@mongodb-database:27017/order?authSource=admin
+      - KAFKA_BROKER=${KAFKA_BROKER:-kafka:9092}
+      - MONGODB_URI=${MONGODB_ORDER_URI:-mongodb://root:rootpassword@mongodb-database:27017/order?authSource=admin}
     depends_on:
-      - kafka
-      - mongodb-database
+      kafka:
+        condition: service_healthy
+      mongodb-database:
+        condition: service_healthy
     networks:
       - api-order-network
       - kafka-network
       - mongodb-order-network
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   user-service:
     container_name: user-service
     build: ./user-service
     environment:
-      - MONGODB_URI=mongodb://root:rootpassword@mongodb-database:27017/user?authSource=admin
+      - MONGODB_URI=${MONGODB_USER_URI:-mongodb://root:rootpassword@mongodb-database:27017/user?authSource=admin}
     depends_on:
-      - mongodb-database
+      mongodb-database:
+        condition: service_healthy
     networks:
       - api-user-network
       - mongodb-user-network
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   product-service:
     container_name: product-service
     build: ./product-service
     environment:
-      - MONGODB_URI=mongodb://root:rootpassword@mongodb-database:27017/product?authSource=admin
+      - MONGODB_URI=${MONGODB_PRODUCT_URI:-mongodb://root:rootpassword@mongodb-database:27017/product?authSource=admin}
     depends_on:
-      - mongodb-database
+      mongodb-database:
+        condition: service_healthy
     networks:
       - api-product-network
       - mongodb-product-network
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

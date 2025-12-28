@@ -10,6 +10,11 @@ const PORT = 3000;
 // Parse JSON bodies
 app.use(express.json());
 
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", service: "api-gateway" });
+});
+
 // GRPC Service URLs from environment variables or defaults
 const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || "localhost:3005";
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || "localhost:3004";
