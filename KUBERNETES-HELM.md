@@ -33,6 +33,8 @@ docker build -t api-gateway:latest ./api-gateway
 helm install ecommerce ./helm/ecommerce
 ```
 
+This includes Prometheus and Grafana for monitoring.
+
 ## Step 4: Monitor Deployment
 
 ```bash
@@ -56,6 +58,35 @@ Edit `helm/ecommerce/values.yaml` or templates, then upgrade:
 ```bash
 helm upgrade ecommerce ./helm/ecommerce
 ```
+
+## Monitoring & Observability
+
+### Access Prometheus
+
+```bash
+kubectl port-forward -n ecommerce svc/prometheus 9090:9090
+```
+
+Access: http://localhost:9090
+
+Prometheus automatically scrapes:
+- **Application metrics**: All services with `prometheus.io/scrape: "true"` annotation
+- **Cluster metrics**: Kubernetes nodes and pods
+
+### Access Grafana
+
+```bash
+kubectl port-forward -n ecommerce svc/grafana 3001:3000
+```
+
+Access: http://localhost:3001
+- Username: `admin`
+- Password: `admin`
+
+Grafana includes a pre-configured dashboard showing:
+- Pod status
+- CPU usage
+- Memory usage
 
 ## Clean Up
 

@@ -12,54 +12,58 @@ spec:
     metadata:
       labels:
         app: api-gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
-      - name: api-gateway
-        image: api-gateway:latest
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 3000
-        env:
-        - name: ORDER_SERVICE_URL
-          valueFrom:
-            configMapKeyRef:
-              name: ecommerce-config
-              key: ORDER_SERVICE_URL
-        - name: PRODUCT_SERVICE_URL
-          valueFrom:
-            configMapKeyRef:
-              name: ecommerce-config
-              key: PRODUCT_SERVICE_URL
-        - name: USER_SERVICE_URL
-          valueFrom:
-            configMapKeyRef:
-              name: ecommerce-config
-              key: USER_SERVICE_URL
-        - name: USER_PROTO_PATH
-          value: "/app/user.proto"
-        - name: PRODUCT_PROTO_PATH
-          value: "/app/product.proto"
-        - name: ORDER_PROTO_PATH
-          value: "/app/order.proto"
-        volumeMounts:
-        - name: proto-files
-          mountPath: /app
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 10
-          periodSeconds: 5
+        - name: api-gateway
+          image: api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: ORDER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: ORDER_SERVICE_URL
+            - name: PRODUCT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: PRODUCT_SERVICE_URL
+            - name: USER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-config
+                  key: USER_SERVICE_URL
+            - name: USER_PROTO_PATH
+              value: "/app/user.proto"
+            - name: PRODUCT_PROTO_PATH
+              value: "/app/product.proto"
+            - name: ORDER_PROTO_PATH
+              value: "/app/order.proto"
+          volumeMounts:
+            - name: proto-files
+              mountPath: /app
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
       volumes:
-      - name: proto-files
-        configMap:
-          name: proto-files
+        - name: proto-files
+          configMap:
+            name: proto-files
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -159,6 +163,6 @@ spec:
   selector:
     app: api-gateway
   ports:
-  - port: 3000
-    targetPort: 3000
+    - port: 3000
+      targetPort: 3000
   type: LoadBalancer
