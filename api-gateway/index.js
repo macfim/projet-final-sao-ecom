@@ -3,21 +3,12 @@ const { ApolloServer, gql } = require("apollo-server-express");
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 const path = require("path");
-const { collectDefaultMetrics, register } = require("prom-client");
-
-collectDefaultMetrics({ prefix: "api_gateway_" });
 
 const app = express();
 const PORT = 3000;
 
 // Parse JSON bodies
 app.use(express.json());
-
-// Metrics endpoint
-app.get("/metrics", async (req, res) => {
-  res.set("Content-Type", register.contentType);
-  res.end(await register.metrics());
-});
 
 // Health check endpoint
 app.get("/health", (req, res) => {

@@ -2,22 +2,6 @@ const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 const path = require("path");
 const mongoose = require("mongoose");
-const http = require("http");
-const { collectDefaultMetrics, register } = require("prom-client");
-
-// Metrics
-collectDefaultMetrics({ prefix: "product_service_" });
-http
-  .createServer(async (req, res) => {
-    if (req.url === "/metrics") {
-      res.setHeader("Content-Type", register.contentType);
-      res.end(await register.metrics());
-    } else {
-      res.writeHead(404);
-      res.end();
-    }
-  })
-  .listen(9100, () => console.log("Metrics on :9100"));
 
 // MongoDB connection
 mongoose.connect(
