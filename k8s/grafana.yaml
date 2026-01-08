@@ -30,7 +30,7 @@ data:
       disableDeletion: false
       editable: true
       options:
-        path: /etc/grafana/provisioning/dashboards
+        path: /var/lib/grafana/dashboards
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -49,41 +49,72 @@ data:
           "title": "Pod Status",
           "type": "stat",
           "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"color": "red", "value": null},
+                  {"color": "green", "value": 1}
+                ]
+              }
+            }
+          },
           "targets": [
             {
-              "expr": "count(kube_pod_info{namespace=\"ecommerce\"})",
-              "legendFormat": "Total Pods"
+              "expr": "count(up{kubernetes_namespace=\"ecommerce\"})",
+              "legendFormat": "Total Pods",
+              "refId": "A"
             }
           ]
         },
         {
           "id": 2,
-          "title": "CPU Usage",
-          "type": "graph",
+          "title": "Service Health",
+          "type": "timeseries",
           "gridPos": {"h": 8, "w": 12, "x": 6, "y": 0},
+          "datasource": "Prometheus",
           "targets": [
             {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"ecommerce\"}[5m])) by (pod)",
-              "legendFormat": "{{pod}}"
+              "expr": "up{kubernetes_namespace=\"ecommerce\"}",
+              "legendFormat": "{{kubernetes_pod_name}}",
+              "refId": "A"
             }
           ]
         },
         {
           "id": 3,
-          "title": "Memory Usage",
-          "type": "graph",
+          "title": "Prometheus Scrape Duration",
+          "type": "timeseries",
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+          "datasource": "Prometheus",
           "targets": [
             {
-              "expr": "sum(container_memory_usage_bytes{namespace=\"ecommerce\"}) by (pod)",
-              "legendFormat": "{{pod}}"
+              "expr": "scrape_duration_seconds{kubernetes_namespace=\"ecommerce\"}",
+              "legendFormat": "{{kubernetes_pod_name}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "HTTP Requests (API Gateway)",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+          "datasource": "Prometheus",
+          "targets": [
+            {
+              "expr": "rate(http_requests_total{kubernetes_namespace=\"ecommerce\"}[5m])",
+              "legendFormat": "{{method}} {{route}}",
+              "refId": "A"
             }
           ]
         }
       ],
       "refresh": "10s",
       "schemaVersion": 27,
-      "version": 1
+      "version": 2
     }
 ---
 apiVersion: apps/v1
